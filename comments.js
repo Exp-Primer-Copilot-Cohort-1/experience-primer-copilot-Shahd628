@@ -41,4 +41,4 @@ http.createServer(function(req, res) {
     }
 }).listen(8080);
 
-console.log('Server running at http://
+console.log('Server running at http://');
