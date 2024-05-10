@@ -1,44 +1,43 @@
-// Create a web server
-// 1. Create a web server
-// 2. Read the HTML file
-// 3. Read the JSON file
-// 4. Combine the HTML and JSON
-// 5. Send the combined result to the client
-
-var http = require('http');
-var fs = require('fs');
-var url = require('url');
-
-http.createServer(function(req, res) {
-    var pathname = url.parse(req.url).pathname;
-    console.log("Request for " + pathname + " received.");
-
-    if (pathname == '/') {
-        fs.readFile('comment.html', function(err, data) {
+//Create web server
+const express = require('express');
+const app = express();
+const path = require('path');
+const bodyParser = require('body-parser');
+const fs = require('fs');
+app.use(bodyParser.urlencoded({extended: true}));
+app.use(bodyParser.json());
+app.use(express.static(path.join(__dirname, 'public')));
+//Read comments from file
+app.get('/comments', (req, res) => {
+    fs.readFile('comments.json', (err, data) => {
+        if (err) {
+            res.status(500).send('Could not read comments file');
+            return;
+        }
+        res.send(data);
+    });
+});
+//Create new comment
+app.post('/comments', (req, res) => {
+    fs.readFile('comments.json', (err, data) => {
+        if (err) {
+            res.status(500).send('Could not read comments file');
+            return;
+        }
+        const comments = JSON.parse(data);
+        const newComment = req.body;
+        newComment.id = comments.length + 1;
+        comments.push(newComment);
+        fs.writeFile('comments.json', JSON.stringify(comments), (err) => {
             if (err) {
-                res.writeHead(404, {'Content-Type': 'text/html'});
-                res.end('404 Not Found');
-            } else {
-                res.writeHead(200, {'Content-Type': 'text/html'});
-                res.write(data.toString());
-                res.end();
+                res.status(500).send('Could not write comments file');
+                return;
             }
+            res.send('Comment added');
         });
-    } else if (pathname == '/get_comments') {
-        fs.readFile('comment.json', function(err, data) {
-            if (err) {
-                res.writeHead(404, {'Content-Type': 'text/html'});
-                res.end('404 Not Found');
-            } else {
-                res.writeHead(200, {'Content-Type': 'application/json'});
-                res.write(data.toString());
-                res.end();
-            }
-        });
-    } else {
-        res.writeHead(404, {'Content-Type': 'text/html'});
-        res.end('404 Not Found');
-    }
-}).listen(8080);
-
-console.log('Server running at http://');
+    });
+});
+//Start server
+app.listen(3000, () => {
+    console.log('Server started');
+});
